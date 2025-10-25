@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IoT Clima – Dashboard</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>IoT Clima – Dashboard</h1>
+    <p>Datos estáticos exportados desde Datastore</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Lecturas (últimas N)</h2>
+      <input id="n-ultimas" type="number" min="1" max="500" value="50" />
+      <button id="btn-ultimas">Actualizar</button>
+      <canvas id="chartLecturas"></canvas>
+    </section>
+
+    <section>
+      <h2>Agregados por hora</h2>
+      <canvas id="chartHora"></canvas>
+    </section>
+
+    <section>
+      <h2>Agregados por día</h2>
+      <canvas id="chartDia"></canvas>
+    </section>
+  </main>
+
+  <footer>Proyecto TEC · GitHub Pages</footer>
+  <script src="./app.js"></script>
+</body>
+</html>

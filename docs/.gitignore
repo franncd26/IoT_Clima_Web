@@ -1,0 +1,5 @@
+respaldo_backend/
+iotproject-*-firebase-adminsdk-*.json
+.venv/
+__pycache__/
+*.pyc
