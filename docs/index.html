@@ -14,12 +14,28 @@
         <h1>IoT Clima – Dashboard</h1>
         <p>Datos estáticos exportados desde Firebase/Datastore</p>
       </div>
-        <div class="theme-wrap">
-          <button id="themeBtn" class="theme-btn" title="Alternar tema">🌓</button>
-          <span id="themeLabel" aria-live="polite">Tema: Oscuro</span>
-        </div>
+      <div class="theme-wrap">
+        <button id="themeBtn" class="theme-btn" title="Alternar tema">🌓</button>
+        <span id="themeLabel" aria-live="polite">Tema: Oscuro</span>
+      </div>
     </div>
   </header>
+
+  <!-- Controles de rango de fechas -->
+  <section class="controls">
+    <div class="row">
+      <div class="dates">
+        <label>Desde:
+          <input id="dateFrom" type="date" />
+        </label>
+        <label>Hasta:
+          <input id="dateTo" type="date" />
+        </label>
+        <button id="applyRange">Aplicar</button>
+        <button id="clearRange" class="ghost">Limpiar</button>
+      </div>
+    </div>
+  </section>
 
   <main>
     <section>
