@@ -17,11 +17,15 @@ const setSavedTheme = (t) => localStorage.setItem(THEME_KEY, t);
 const currentTheme = () => document.documentElement.getAttribute('data-theme') || 'dark';
 const toggleTheme = () => {
   const next = currentTheme() === 'light' ? 'dark' : 'light';
-  applyTheme(next); setSavedTheme(next);
-  // Re-aplicar colores a charts y refrescar
+  applyTheme(next);
+  setSavedTheme(next);
   recolorCharts();
   [chartLecturas, chartHora, chartDia].forEach(c => c?.update());
+
+  const label = document.getElementById('themeLabel');
+  if (label) label.textContent = `Tema: ${next === 'light' ? 'Claro' : 'Oscuro'}`;
 };
+
 
 // Init tema (preferencia almacenada si existe, si no por defecto 'dark')
 (() => {
