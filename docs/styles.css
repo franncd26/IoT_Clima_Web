@@ -1,14 +1,58 @@
-:root { --bg:#0b1220; --card:#111a2b; --text:#e6eefc; --muted:#97a6c6; }
-* { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
-header, footer { padding: 16px 20px; background: var(--card); }
-h1 { margin: 0 0 4px 0; }
-h2 { margin: 16px 0 8px; }
-main { max-width: 1100px; margin: 0 auto; padding: 20px; display: grid; gap: 24px; }
-section { background: var(--card); padding: 16px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
-input, button { padding: 8px 10px; border-radius: 8px; border: 1px solid #2a3b5e; background: #0e1729; color: var(--text); }
-button { cursor: pointer; }
-canvas { width: 100%; height: 320px; }
+/* ===== Tema base (oscuro) ===== */
+:root {
+  --bg:#0b1220;
+  --card:#111a2b;
+  --text:#e6eefc;
+  --muted:#97a6c6;
+  --border:#26324c;
+  --grid:#2a3b5e88;   /* con alfa para grillas */
+  --accent:#5da2ff;
+}
 
-/* Ajustes Chart.js (opcional) */
-.chartjs-render-monitor { max-width: 100%; }
+/* ===== Tema claro ===== */
+:root[data-theme="light"]{
+  --bg:#f7f9fd;
+  --card:#ffffff;
+  --text:#0b1220;
+  --muted:#4a5a7a;
+  --border:#d9e2f2;
+  --grid:#c8d3ea88;
+  --accent:#0067ff;
+}
+
+*{ box-sizing: border-box; }
+body{ margin:0; font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+
+/* Header */
+header, footer{ background:var(--card); border-bottom:1px solid var(--border); }
+header .wrap{ max-width:1100px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+footer{ padding:16px 20px; border-top:1px solid var(--border); }
+
+h1{ margin:0 0 4px 0; }
+h2{ margin:16px 0 8px; }
+p{ color:var(--muted); margin:0; }
+
+main{ max-width:1100px; margin:0 auto; padding:20px; display:grid; gap:24px; }
+section{ background:var(--card); padding:16px; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.18); border:1px solid var(--border); }
+
+canvas{ width:100%; height:320px; border-radius:10px; }
+
+/* Botón de tema */
+.theme-btn{
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--text);
+  border-radius:10px;
+  padding:8px 12px;
+  font-size:16px;
+  cursor:pointer;
+}
+.theme-btn:hover{ background:rgba(0,0,0,.06); }
+:root[data-theme="light"] .theme-btn:hover{ background:#f0f4ff; }
+
+/* Inputs (para futuros filtros) */
+input, button{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text); }
+button{ cursor:pointer; }
+
+/* Ajuste Chart.js (opcional) */
+.chartjs-render-monitor{ max-width:100%; }

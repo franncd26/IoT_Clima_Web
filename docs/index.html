@@ -5,13 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IoT Clima – Dashboard</title>
   <link rel="stylesheet" href="./styles.css" />
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
-    <h1>IoT Clima – Dashboard</h1>
-    <p>Datos estáticos exportados desde Firebase/Datastore</p>
+    <div class="wrap">
+      <div class="titles">
+        <h1>IoT Clima – Dashboard</h1>
+        <p>Datos estáticos exportados desde Firebase/Datastore</p>
+      </div>
+      <button id="themeBtn" class="theme-btn" title="Alternar tema">🌓</button>
+    </div>
   </header>
 
   <main>
