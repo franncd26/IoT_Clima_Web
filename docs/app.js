@@ -17,9 +17,11 @@ function mkMultiLine(ctx, labels, datasets){
       plugins: { legend: { display: true } },
       scales: {
         x: { ticks:{ autoSkip:true, maxRotation:0 } },
-        y: { beginAtZero: false }
+        y:  { beginAtZero: false, position:'left',  title:{display:true, text:'Temperatura (°C)'} },
+        y1: { beginAtZero: true,  position:'right', grid:{ drawOnChartArea:false }, title:{display:true, text:'Lluvia (mm) / Radiación (W/m²)'} }
       }
     }
+
   });
   ctx._chart = c;
   return c;
@@ -50,30 +52,41 @@ function mkBar(ctx, labels, seriesLabel, data){
   const ctxL   = document.getElementById('chartLecturas');
 
   function drawUltimas(N){
-    const items = lecturas.items.slice(-N); // últimas N
+  const items = lecturas.items.slice(-N);
+  const labels = items.map(x => x.timestamp_local || x.doc_id);
 
-    // Labels (timestamp_local si existe, sino doc_id)
-    const labels = items.map(x => x.timestamp_local || x.doc_id);
+  const serieTemp  = items.map(x => (x.temp ?? 0));
+  const serieLluv  = items.map(x => (x.lluvia ?? 0));
+  const serieRad   = items.map(x => (x.rad_max ?? 0));
 
-    // Series: usa 0 si el campo no existe en alguna fila
-    const serieTemp = items.map(x => (x.temp ?? 0));
-    const serieLluvia = items.map(x => (x.lluvia ?? 0));       // en Lectura es 'lluvia'
-    const serieRadMax = items.map(x => (x.rad_max ?? 0));      // en Lectura es 'rad_max'
+  const showTemp = document.getElementById('chk-temp')?.checked ?? true;
+  const showLluv = document.getElementById('chk-lluvia')?.checked ?? true;
+  const showRad  = document.getElementById('chk-rad')?.checked ?? true;
 
-    // Multi-dataset (Chart.js asigna colores por defecto)
-    const datasets = [
-      { label: 'Temperatura (°C)', data: serieTemp },
-      { label: 'Lluvia (mm)',      data: serieLluvia },
-      { label: 'Radiación máx. (W/m²)', data: serieRadMax },
-    ];
+  const datasets = [];
+  if (showTemp) datasets.push({ label:'Temperatura (°C)', data: serieTemp, yAxisID:'y' });
+  if (showLluv) datasets.push({ label:'Lluvia (mm)', data: serieLluv, yAxisID:'y1' });
+  if (showRad)  datasets.push({ label:'Radiación máx. (W/m²)', data: serieRad, yAxisID:'y1' });
 
-    chartLecturas = mkMultiLine(ctxL, labels, datasets);
-  }
+
+  chartLecturas = mkMultiLine(ctxL, labels, datasets);
+}
+
 
   drawUltimas(parseInt(inputN.value || '50', 10));
   btnN.addEventListener('click', () => {
     drawUltimas(parseInt(inputN.value || '50', 10));
   });
+
+    // 🔽 Detectar cambios en los checkboxes (mostrar/ocultar series)
+  ['chk-temp','chk-lluvia','chk-rad'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', () => {
+      drawUltimas(parseInt(inputN.value || '50', 10));
+    });
+  });
+  // 🔼 Fin del bloque de toggles
+
 
   // === Segundo gráfico: Agregados por hora (temperatura promedio)
   const ctxH = document.getElementById('chartHora');
