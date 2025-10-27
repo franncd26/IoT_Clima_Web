@@ -1,4 +1,4 @@
-// app.js — Punto 0 (fechas legibles) + Punto 1 (tema con etiqueta) + Punto 2 (filtro por fechas)
+// app.js — Punto 0 (fechas legibles) + Punto 1 (tema con etiqueta) + Punto 2 (filtro por fechas) + Punto 3 (min/max)
 
 // ===== Utilidades de carga =====
 async function loadJSON(path) { const r = await fetch(path, { cache: 'no-store' }); return r.json(); }
@@ -6,8 +6,11 @@ let chartLecturas, chartHora, chartDia;
 
 // ===== Helpers de fecha (presentación) =====
 const CR_TZ = 'America/Costa_Rica';
-const fmtDate = (iso, opts = { dateStyle: 'short', timeStyle: 'short' }) =>
-  new Intl.DateTimeFormat('es-CR', { timeZone: CR_TZ, ...opts }).format(new Date(iso));
+const fmtDate = (iso, opts = { dateStyle: 'short', timeStyle: 'short' }) => {
+  const d = new Date(iso);
+  if (isNaN(d)) return '—';
+  return new Intl.DateTimeFormat('es-CR', { timeZone: CR_TZ, ...opts }).format(d);
+};
 
 // ===== Tema oscuro/claro =====
 const THEME_KEY = 'iot_theme';
@@ -121,6 +124,51 @@ function mkBar(ctx, labels, seriesLabel, data){
   return c;
 }
 
+// === Cálculo de min/max en el rango actual ===
+function minMaxWithTs(arr, key){
+  let minVal = null, maxVal = null, minTs = null, maxTs = null;
+  for (const o of arr){
+    const v = Number(o[key]);
+    if (!Number.isFinite(v)) continue;
+    const ts = o.timestamp_local || o.timestamp || o.from_ts_local || o.from_ts || o.doc_id;
+    if (minVal === null || v < minVal){ minVal = v; minTs = ts; }
+    if (maxVal === null || v > maxVal){ maxVal = v; maxTs = ts; }
+  }
+  return { minVal, minTs, maxVal, maxTs };
+}
+
+function setStat(idVal, idTs, val, ts, unit){
+  const valEl = document.getElementById(idVal);
+  const tsEl  = document.getElementById(idTs);
+  if (!valEl || !tsEl) return;
+  if (val == null){
+    valEl.textContent = '–';
+    tsEl.textContent  = '';
+  } else {
+    valEl.textContent = `${val.toFixed(2)} ${unit}`;
+    tsEl.textContent  = `(${fmtDate(ts)})`;
+  }
+}
+
+function computeAndRenderStats(){
+  const L = State.filtered.lecturas;
+
+  // Temp (°C)
+  const t = minMaxWithTs(L, 'temp');
+  setStat('tempMinVal','tempMinTs', t.minVal, t.minTs, '°C');
+  setStat('tempMaxVal','tempMaxTs', t.maxVal, t.maxTs, '°C');
+
+  // Lluvia (mm)
+  const ll = minMaxWithTs(L, 'lluvia');
+  setStat('lluviaMinVal','lluviaMinTs', ll.minVal, ll.minTs, 'mm');
+  setStat('lluviaMaxVal','lluviaMaxTs', ll.maxVal, ll.maxTs, 'mm');
+
+  // Radiación (W/m²)
+  const r = minMaxWithTs(L, 'rad_max');
+  setStat('radMinVal','radMinTs', r.minVal, r.minTs, 'W/m²');
+  setStat('radMaxVal','radMaxTs', r.maxVal, r.maxTs, 'W/m²');
+}
+
 // ===== Estado y helpers de rango (Punto 2) =====
 const State = {
   raw: { lecturas: [], aggHora: [], aggDia: [] },
@@ -218,6 +266,9 @@ function applyRangeFilter(){
   // Aplicar colores por si el tema cargó desde localStorage
   recolorCharts();
 
+  // Calcula y pinta min/max iniciales
+  computeAndRenderStats();
+
   // ===== Listeners de filtros =====
   document.getElementById('applyRange')?.addEventListener('click', () => {
     State.range.from = document.getElementById('dateFrom').value || null;
@@ -241,6 +292,9 @@ function applyRangeFilter(){
     chartDia.data.labels = D.map(x => fmtDate(x.from_ts_local || x.from_ts || x.doc_id, { dateStyle:'medium' }));
     chartDia.data.datasets[0].data = D.map(x => x.lluvia_total ?? 0);
     chartDia.update();
+
+    // Una sola vez al final
+    computeAndRenderStats();
   });
 
   document.getElementById('clearRange')?.addEventListener('click', () => {
@@ -267,5 +321,8 @@ function applyRangeFilter(){
     chartDia.data.labels = D.map(x => fmtDate(x.from_ts_local || x.from_ts || x.doc_id, { dateStyle:'medium' }));
     chartDia.data.datasets[0].data = D.map(x => x.lluvia_total ?? 0);
     chartDia.update();
+
+    // Una sola vez al final
+    computeAndRenderStats();
   });
 })();
