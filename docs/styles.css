@@ -5,7 +5,7 @@
   --text:#e6eefc;
   --muted:#97a6c6;
   --border:#26324c;
-  --grid:#2a3b5e88;   /* con alfa para grillas */
+  --grid:#2a3b5e88;
   --accent:#5da2ff;
 }
 
@@ -20,56 +20,65 @@
   --accent:#0067ff;
 }
 
-*{ box-sizing: border-box; }
-body{ margin:0; font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+/* ===== Estructura base ===== */
+*{ box-sizing:border-box; }
+body{ margin:0; font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
 
-/* Header */
 header, footer{ background:var(--card); border-bottom:1px solid var(--border); }
-header .wrap{ max-width:1100px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-footer{ padding:16px 20px; border-top:1px solid var(--border); }
+header .wrap{
+  max-width:1100px; margin:0 auto; padding:12px 20px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+footer{
+  padding:16px 20px; border-top:1px solid var(--border);
+  text-align:center; color:var(--muted);
+}
 
 h1{ margin:0 0 4px 0; }
 h2{ margin:16px 0 8px; }
 p{ color:var(--muted); margin:0; }
 
-main{ max-width:1100px; margin:0 auto; padding:20px; display:grid; gap:24px; }
-section{ background:var(--card); padding:16px; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.18); border:1px solid var(--border); }
+/* ===== Main layout ===== */
+main{ max-width:900px; margin:0 auto; padding:20px; display:grid; gap:24px; }
+section{
+  background:var(--card); padding:16px; border-radius:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18); border:1px solid var(--border);
+}
+canvas{ width:100%; height:360px; border-radius:10px; }
 
-canvas{ width:100%; height:320px; border-radius:10px; }
+/* ===== Botones / Inputs ===== */
+input, button{
+  padding:8px 10px; border-radius:8px; border:1px solid var(--border);
+  background:transparent; color:var(--text);
+}
+button{ cursor:pointer; }
+button:hover{ opacity:.9; }
 
-/* Botón de tema */
+/* ===== Botón de tema ===== */
 .theme-btn{
   border:1px solid var(--border);
-  background:transparent;
-  color:var(--text);
-  border-radius:10px;
-  padding:8px 12px;
-  font-size:16px;
+  background:transparent; color:var(--text);
+  border-radius:10px; padding:8px 12px; font-size:16px;
   cursor:pointer;
 }
 .theme-btn:hover{ background:rgba(0,0,0,.06); }
 :root[data-theme="light"] .theme-btn:hover{ background:#f0f4ff; }
 
-/* Inputs y botones */
-input, button{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text); }
-button{ cursor:pointer; }
-
-/* Ajuste Chart.js (opcional) */
-.chartjs-render-monitor{ max-width:100%; }
-
-/* === Barra de filtros (rango de fechas) === */
-.controls { max-width:1100px; margin:16px auto 0; padding:0 20px; }
+/* ===== Barra de filtros ===== */
+.controls{ max-width:900px; margin:16px auto 0; padding:0 20px; }
 .controls .row{
-  background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px;
-  display:flex; gap:12px; align-items:center; flex-wrap:wrap; box-shadow:0 8px 24px rgba(0,0,0,.12);
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:12px; display:flex; gap:12px; align-items:center;
+  flex-wrap:wrap; box-shadow:0 8px 24px rgba(0,0,0,.12);
 }
 .controls .dates{ display:flex; align-items:center; gap:10px; }
 .controls label{ display:flex; align-items:center; gap:6px; color:var(--muted); }
-.controls .ghost{ background:transparent; opacity:.9; }
+.controls .ghost{ background:transparent; opacity:.8; }
+.controls .downloads{ margin-left:auto; display:flex; gap:8px; }
 
-/* === Tarjetas de estadísticas (min/max) === */
+/* ===== Tarjetas de estadísticas ===== */
 .stats{
-  max-width:1100px; margin:12px auto 0; padding:0 20px;
+  max-width:900px; margin:12px auto 0; padding:0 20px;
   display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
 }
 .stat{
@@ -82,6 +91,10 @@ button{ cursor:pointer; }
 .stat em{ font-style:normal; color:var(--muted); margin-right:4px; }
 .stat b{ font-weight:700; }
 .stat small{ color:var(--muted); margin-left:6px; }
-@media (max-width: 880px){
-  .stats{ grid-template-columns: 1fr; }
+
+/* ===== Responsivo ===== */
+@media (max-width:880px){
+  .stats{ grid-template-columns:1fr; }
+  .controls .row{ flex-direction:column; align-items:flex-start; }
+  canvas{ height:300px; }
 }
