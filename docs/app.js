@@ -74,18 +74,26 @@ function mkMultiLine(ctx, labels, datasets){
     options: {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: true, labels: { color: text } } },
+      plugins: {
+        legend: { display: true, labels: { color: text } },
+        title:  { display: false }
+      },
       scales: {
         x:  { ticks:{ autoSkip:true, maxRotation:0, color:text }, grid:{ color:grid } },
         y:  { beginAtZero:false, position:'left',
               ticks:{ color:text }, grid:{ color:grid },
-              title:{ display:true, text:'Valores', color:text } }
+              title:{ display:true, text:'Temperatura (°C)', color:text } },
+        y1: { beginAtZero:true,  position:'right',
+              grid:{ drawOnChartArea:false, color:grid },
+              ticks:{ color:text },
+              title:{ display:true, text:'Lluvia (mm) / Radiación (W/m²)', color:text } }
       }
     }
   });
   ctx._chart = c;
   return c;
 }
+
 
 // === Min/max ===
 function minMaxWithTs(arr, key){
@@ -196,11 +204,12 @@ function downloadCSV(){
     document.getElementById('chartLecturas'),
     L.map(x => fmtDate(x.timestamp_local || x.timestamp)),
     [
-      { label:'Temperatura (°C)', data:L.map(x => x.temp ?? 0) },
-      { label:'Radiación (máx)',  data:L.map(x => x.rad_max ?? 0) },
-      { label:'Lluvia (mm)',      data:L.map(x => x.lluvia ?? 0) },
+      { label:'Temperatura (°C)', data:L.map(x => x.temp ?? 0),    yAxisID:'y'  },
+      { label:'Radiación (máx)',  data:L.map(x => x.rad_max ?? 0), yAxisID:'y1' },
+      { label:'Lluvia (mm)',      data:L.map(x => x.lluvia ?? 0),  yAxisID:'y1' },
     ]
   );
+
 
   recolorCharts();
   computeAndRenderStats();

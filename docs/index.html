@@ -24,6 +24,7 @@
   <!-- Controles de rango de fechas -->
   <section class="controls">
     <div class="row">
+      <!-- 1) Fechas (arriba, a la izquierda) -->
       <div class="dates">
         <label>Desde:
           <input id="dateFrom" type="date" />
@@ -31,12 +32,17 @@
         <label>Hasta:
           <input id="dateTo" type="date" />
         </label>
-        <button id="applyRange">Aplicar</button>
-        <button id="clearRange" class="ghost">Limpiar</button>
       </div>
 
-      <div class="downloads" style="margin-left:auto; display:flex; gap:8px;">
+      <!-- 2) Descarga CSV (aprovecha espacio a la izquierda, sin irse al extremo derecho) -->
+      <div class="downloads">
         <button id="downloadCSV">Descargar CSV</button>
+      </div>
+
+      <!-- 3) Acciones (abajo de las fechas) -->
+      <div class="actions">
+        <button id="applyRange">Aplicar</button>
+        <button id="clearRange" class="ghost">Limpiar</button>
       </div>
     </div>
   </section>
