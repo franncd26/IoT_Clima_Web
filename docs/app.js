@@ -1,4 +1,4 @@
-// app.js — Punto 0 (fechas legibles) + Punto 1 (tema con etiqueta) + Punto 2 (filtro por fechas) + Punto 3 (min/max)
+// app.js — Puntos 0–4: tema, filtro, min/max y descarga CSV
 
 // ===== Utilidades de carga =====
 async function loadJSON(path) { const r = await fetch(path, { cache: 'no-store' }); return r.json(); }
@@ -29,18 +29,16 @@ const toggleTheme = () => {
   if (label) label.textContent = `Tema: ${next === 'light' ? 'Claro' : 'Oscuro'}`;
 };
 
-// Init tema (preferencia almacenada si existe, si no por defecto 'dark')
+// Init tema
 (() => {
   const saved = getSavedTheme();
   applyTheme(saved || 'dark');
   document.getElementById('themeBtn')?.addEventListener('click', toggleTheme);
-
-  // Sincroniza etiqueta al cargar
   const label = document.getElementById('themeLabel');
   if (label) label.textContent = `Tema: ${(saved || 'dark') === 'light' ? 'Claro' : 'Oscuro'}`;
 })();
 
-// ===== Colores desde CSS variables para Chart.js =====
+// ===== Colores para Chart.js =====
 const getCSSVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '';
 function chartColors() {
   const text = getCSSVar('--text') || '#e6eefc';
@@ -49,8 +47,6 @@ function chartColors() {
   const muted = getCSSVar('--muted') || '#97a6c6';
   return { text, grid, accent, muted };
 }
-
-// Aplica colores actuales del tema a un chart (ticks/leyenda/grilla)
 function applyColorsToChart(chart) {
   if (!chart) return;
   const { text, grid } = chartColors();
@@ -60,26 +56,19 @@ function applyColorsToChart(chart) {
     if (axes[k].grid)  axes[k].grid.color  = grid;
     if (axes[k].title) axes[k].title.color = text;
   }
-  if (chart.options?.plugins?.legend?.labels) {
+  if (chart.options?.plugins?.legend?.labels)
     chart.options.plugins.legend.labels.color = text;
-  }
-  if (chart.options?.plugins?.title) {
+  if (chart.options?.plugins?.title)
     chart.options.plugins.title.color = text;
-  }
 }
+function recolorCharts() { [chartLecturas, chartHora, chartDia].forEach(applyColorsToChart); }
 
-// Recolorea todos los charts
-function recolorCharts() {
-  [chartLecturas, chartHora, chartDia].forEach(applyColorsToChart);
-}
-
-// ===== Factories de gráficos =====
+// ===== Charts =====
 function mkMultiLine(ctx, labels, datasets){
   if (!ctx) return null;
   if (ctx._chart) ctx._chart.destroy();
 
   const { text, grid } = chartColors();
-
   const c = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets },
@@ -101,13 +90,11 @@ function mkMultiLine(ctx, labels, datasets){
   ctx._chart = c;
   return c;
 }
-
 function mkBar(ctx, labels, seriesLabel, data){
   if (!ctx) return null;
   if (ctx._chart) ctx._chart.destroy();
 
   const { text, grid } = chartColors();
-
   const c = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [{ label: seriesLabel, data }] },
@@ -124,7 +111,7 @@ function mkBar(ctx, labels, seriesLabel, data){
   return c;
 }
 
-// === Cálculo de min/max en el rango actual ===
+// === Min/max ===
 function minMaxWithTs(arr, key){
   let minVal = null, maxVal = null, minTs = null, maxTs = null;
   for (const o of arr){
@@ -136,46 +123,32 @@ function minMaxWithTs(arr, key){
   }
   return { minVal, minTs, maxVal, maxTs };
 }
-
 function setStat(idVal, idTs, val, ts, unit){
   const valEl = document.getElementById(idVal);
   const tsEl  = document.getElementById(idTs);
   if (!valEl || !tsEl) return;
-  if (val == null){
-    valEl.textContent = '–';
-    tsEl.textContent  = '';
-  } else {
-    valEl.textContent = `${val.toFixed(2)} ${unit}`;
-    tsEl.textContent  = `(${fmtDate(ts)})`;
-  }
+  if (val == null){ valEl.textContent = '–'; tsEl.textContent  = ''; }
+  else { valEl.textContent = `${val.toFixed(2)} ${unit}`; tsEl.textContent  = `(${fmtDate(ts)})`; }
 }
-
 function computeAndRenderStats(){
   const L = State.filtered.lecturas;
-
-  // Temp (°C)
   const t = minMaxWithTs(L, 'temp');
   setStat('tempMinVal','tempMinTs', t.minVal, t.minTs, '°C');
   setStat('tempMaxVal','tempMaxTs', t.maxVal, t.maxTs, '°C');
-
-  // Lluvia (mm)
   const ll = minMaxWithTs(L, 'lluvia');
   setStat('lluviaMinVal','lluviaMinTs', ll.minVal, ll.minTs, 'mm');
   setStat('lluviaMaxVal','lluviaMaxTs', ll.maxVal, ll.maxTs, 'mm');
-
-  // Radiación (W/m²)
   const r = minMaxWithTs(L, 'rad_max');
   setStat('radMinVal','radMinTs', r.minVal, r.minTs, 'W/m²');
   setStat('radMaxVal','radMaxTs', r.maxVal, r.maxTs, 'W/m²');
 }
 
-// ===== Estado y helpers de rango (Punto 2) =====
+// ===== Estado y filtros =====
 const State = {
   raw: { lecturas: [], aggHora: [], aggDia: [] },
   filtered: { lecturas: [], aggHora: [], aggDia: [] },
   range: { from: null, to: null }
 };
-
 function inRange(dateStr, from, to){
   if (!dateStr) return false;
   const d = new Date(dateStr);
@@ -184,32 +157,55 @@ function inRange(dateStr, from, to){
   if (to   && d > new Date(to   + 'T23:59:59')) return false;
   return true;
 }
-
 function setDateBounds(){
   const L = State.raw.lecturas;
   if (!L.length) return;
-  const times = L
-    .map(x => new Date(x.timestamp_local || x.timestamp))
-    .filter(d => !Number.isNaN(d.getTime()))
-    .sort((a,b)=>a-b);
+  const times = L.map(x => new Date(x.timestamp_local || x.timestamp)).filter(d => !isNaN(d)).sort((a,b)=>a-b);
   const toYMD = (d) => d.toISOString().slice(0,10);
   const min = toYMD(times[0]);
   const max = toYMD(times[times.length-1]);
-
   const fromEl = document.getElementById('dateFrom');
   const toEl   = document.getElementById('dateTo');
   if (fromEl){ fromEl.min = min; fromEl.max = max; if (!fromEl.value) fromEl.value = min; }
   if (toEl){   toEl.min   = min; toEl.max   = max; if (!toEl.value)   toEl.value   = max; }
-
   State.range.from = fromEl?.value || null;
   State.range.to   = toEl?.value   || null;
 }
-
 function applyRangeFilter(){
   const { from, to } = State.range;
   State.filtered.lecturas = State.raw.lecturas.filter(x => inRange(x.timestamp_local || x.timestamp, from, to));
   State.filtered.aggHora  = State.raw.aggHora .filter(x => inRange(x.from_ts_local || x.from_ts || x.doc_id, from, to));
   State.filtered.aggDia   = State.raw.aggDia  .filter(x => inRange(x.from_ts_local || x.from_ts || x.doc_id, from, to));
+}
+
+// ===== Descarga CSV =====
+function toCSV(arr){
+  const cols = ['timestamp_local','temp','lluvia','rad_max'];
+  const header = cols.join(',');
+  if (!arr.length) return header + '\n';
+  const esc = (v) => {
+    if (v == null) return '';
+    const s = String(v);
+    return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g,'""')}"` : s;
+  };
+  const lines = arr.map(o => {
+    const ts = o.timestamp_local ?? o.timestamp ?? '';
+    const row = [ts, o.temp, o.lluvia, o.rad_max].map(esc);
+    return row.join(',');
+  });
+  return [header, ...lines].join('\n');
+}
+function downloadCSV(){
+  const csv = toCSV(State.filtered.lecturas);
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csv], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `lecturas_${State.range.from || 'inicio'}_${State.range.to || 'fin'}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(a.href);
+  a.remove();
 }
 
 // ===== Carga y render inicial =====
@@ -220,62 +216,49 @@ function applyRangeFilter(){
     loadJSON('./agg_dia.json'),
   ]);
 
-  // Guarda los datos originales en el estado
   State.raw.lecturas = (lecturas.items || []);
   State.raw.aggHora  = (aggHora.items  || []);
   State.raw.aggDia   = (aggDia.items   || []);
 
-  // Inicializa límites del selector y aplica filtro inicial
   setDateBounds();
   applyRangeFilter();
 
-  // === Gráfico 1: Lecturas (30 min)
-  {
-    const ctxL = document.getElementById('chartLecturas');
-    const L = State.filtered.lecturas;
-    const labelsL = L.map(x => fmtDate(x.timestamp_local || x.timestamp));
-    const dataTemp = L.map(x => x.temp ?? 0);
-    const dataRad  = L.map(x => x.rad_max ?? 0);
-    const dataLlu  = L.map(x => x.lluvia ?? 0);
+  const L = State.filtered.lecturas;
+  chartLecturas = mkMultiLine(
+    document.getElementById('chartLecturas'),
+    L.map(x => fmtDate(x.timestamp_local || x.timestamp)),
+    [
+      { label:'Temperatura (°C)', data:L.map(x => x.temp ?? 0), yAxisID:'y'  },
+      { label:'Radiación (máx)',  data:L.map(x => x.rad_max ?? 0), yAxisID:'y1' },
+      { label:'Lluvia (mm)',      data:L.map(x => x.lluvia ?? 0), yAxisID:'y1' },
+    ]
+  );
 
-    chartLecturas = mkMultiLine(ctxL, labelsL, [
-      { label:'Temperatura (°C)', data:dataTemp, yAxisID:'y'  },
-      { label:'Radiación (máx)',  data:dataRad,  yAxisID:'y1' },
-      { label:'Lluvia (mm)',      data:dataLlu,  yAxisID:'y1' },
-    ]);
-  }
+  const H = State.filtered.aggHora;
+  chartHora = mkBar(
+    document.getElementById('chartHora'),
+    H.map(x => fmtDate(x.from_ts_local || x.from_ts || x.doc_id, { dateStyle:'short', timeStyle:'short' })),
+    'Temp. promedio por hora (°C)',
+    H.map(x => x.temp_avg ?? 0)
+  );
 
-  // === Gráfico 2: Agregados por hora (temperatura promedio)
-  {
-    const ctxH = document.getElementById('chartHora');
-    const H = State.filtered.aggHora;
-    const labelsH = H.map(x => fmtDate(x.from_ts_local || x.from_ts || x.doc_id, { dateStyle:'short', timeStyle:'short' }));
-    const dataH = H.map(x => x.temp_avg ?? 0);
-    chartHora = mkBar(ctxH, labelsH, 'Temp. promedio por hora (°C)', dataH);
-  }
+  const D = State.filtered.aggDia;
+  chartDia = mkBar(
+    document.getElementById('chartDia'),
+    D.map(x => fmtDate(x.from_ts_local || x.from_ts || x.doc_id, { dateStyle:'medium' })),
+    'Lluvia total por día (mm)',
+    D.map(x => x.lluvia_total ?? 0)
+  );
 
-  // === Gráfico 3: Agregados por día (lluvia total)
-  {
-    const ctxD = document.getElementById('chartDia');
-    const D = State.filtered.aggDia;
-    const labelsD = D.map(x => fmtDate(x.from_ts_local || x.from_ts || x.doc_id, { dateStyle:'medium' }));
-    const dataD = D.map(x => x.lluvia_total ?? 0);
-    chartDia = mkBar(ctxD, labelsD, 'Lluvia total por día (mm)', dataD);
-  }
-
-  // Aplicar colores por si el tema cargó desde localStorage
   recolorCharts();
-
-  // Calcula y pinta min/max iniciales
   computeAndRenderStats();
 
-  // ===== Listeners de filtros =====
+  // === Listeners ===
   document.getElementById('applyRange')?.addEventListener('click', () => {
     State.range.from = document.getElementById('dateFrom').value || null;
     State.range.to   = document.getElementById('dateTo').value   || null;
     applyRangeFilter();
 
-    // Refrescar gráficos
     const L = State.filtered.lecturas;
     chartLecturas.data.labels = L.map(x => fmtDate(x.timestamp_local || x.timestamp));
     chartLecturas.data.datasets[0].data = L.map(x => x.temp ?? 0);
@@ -293,7 +276,6 @@ function applyRangeFilter(){
     chartDia.data.datasets[0].data = D.map(x => x.lluvia_total ?? 0);
     chartDia.update();
 
-    // Una sola vez al final
     computeAndRenderStats();
   });
 
@@ -304,7 +286,6 @@ function applyRangeFilter(){
     State.range = { from:null, to:null };
     applyRangeFilter();
 
-    // Refrescar gráficos
     const L = State.filtered.lecturas;
     chartLecturas.data.labels = L.map(x => fmtDate(x.timestamp_local || x.timestamp));
     chartLecturas.data.datasets[0].data = L.map(x => x.temp ?? 0);
@@ -322,7 +303,8 @@ function applyRangeFilter(){
     chartDia.data.datasets[0].data = D.map(x => x.lluvia_total ?? 0);
     chartDia.update();
 
-    // Una sola vez al final
     computeAndRenderStats();
   });
+
+  document.getElementById('downloadCSV')?.addEventListener('click', downloadCSV);
 })();
