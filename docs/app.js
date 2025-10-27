@@ -180,21 +180,29 @@ function applyRangeFilter(){
 
 // ===== Descarga CSV =====
 function toCSV(arr){
-  const cols = ['timestamp_local','temp','lluvia','rad_max'];
+  const cols = ['fecha_local','temp','lluvia','rad_max'];
   const header = cols.join(',');
   if (!arr.length) return header + '\n';
+
   const esc = (v) => {
     if (v == null) return '';
     const s = String(v);
-    return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g,'""')}"` : s;
+    return (s.includes(',') || s.includes('"') || s.includes('\n'))
+      ? `"${s.replace(/"/g,'""')}"`
+      : s;
   };
+
   const lines = arr.map(o => {
-    const ts = o.timestamp_local ?? o.timestamp ?? '';
-    const row = [ts, o.temp, o.lluvia, o.rad_max].map(esc);
+    // Formatear fecha como en los gráficos (ej. 26/10/25 15:30)
+    const raw = o.timestamp_local ?? o.timestamp ?? '';
+    const fecha = raw ? fmtDate(raw, { dateStyle:'short', timeStyle:'short' }) : '';
+    const row = [fecha, o.temp, o.lluvia, o.rad_max].map(esc);
     return row.join(',');
   });
+
   return [header, ...lines].join('\n');
 }
+
 function downloadCSV(){
   const csv = toCSV(State.filtered.lecturas);
   const bom = '\uFEFF';
